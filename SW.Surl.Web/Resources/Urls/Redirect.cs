@@ -5,7 +5,7 @@ using SW.Surl.Domain;
 namespace SW.Surl.Resources.Urls
 {
     [Unprotect]
-    public class Redirect : IGetHandler<string>
+    public class Redirect : IGetHandler<string,object>
     {
         private readonly SurlDbContext db;
 
@@ -13,7 +13,7 @@ namespace SW.Surl.Resources.Urls
         {
             this.db = db;
         }
-        public async Task<object> Handle(string key, bool lookup = false)
+        public async Task<object> Handle(string key)
         {
             
             ShortUrl url = await db.Set<ShortUrl>().FindAsync(key);

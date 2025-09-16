@@ -8,7 +8,7 @@ using SW.Surl.Model;
 
 namespace SW.Surl.Resources.Urls
 {
-    public class Create : ICommandHandler<ShortUrlCreate>
+    public class Create : ICommandHandler<ShortUrlCreate,object>
     {
         private readonly SurlDbContext db;
 
