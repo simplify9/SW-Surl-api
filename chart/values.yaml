@@ -5,6 +5,8 @@
 replicaCount: 1
 
 image:
+  repository: simplify9/sw-surl-api
+  tag: ""  # Will be set by CI/CD pipeline
   pullPolicy: IfNotPresent
 
 # imagePullSecrets:

@@ -1,5 +1,14 @@
 apiVersion: v2
 version: 0.0.1
 appVersion: 0.0.1
-description: A Helm chart for Infolink
+description: A Helm chart for SW Surl - URL shortening service API
 name: surl
+home: https://github.com/simplify9/SW-Surl-api
+sources:
+  - https://github.com/simplify9/SW-Surl-api
+maintainers:
+  - name: Simplify9
+keywords:
+  - url-shortener
+  - api
+  - microservice

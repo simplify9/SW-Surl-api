@@ -1,0 +1,233 @@
+name: 'Helm Deploy to Kubernetes'
+description: 'Deploy Helm chart from OCI registry to Kubernetes cluster'
+author: 'Simplify9'
+
+inputs:
+  chart-name:
+    description: 'Name of the Helm chart'
+    required: true
+  chart-version:
+    description: 'Version of the Helm chart to deploy'
+    required: true
+  registry:
+    description: 'OCI registry URL where the chart is stored'
+    required: false
+    default: 'docker.io'
+  repository:
+    description: 'Repository path in the registry'
+    required: true
+  registry-username:
+    description: 'Registry username for authentication'
+    required: true
+  registry-password:
+    description: 'Registry password or token for authentication'
+    required: true
+  kubeconfig:
+    description: 'Base64 encoded kubeconfig for cluster access'
+    required: true
+  release-name:
+    description: 'Helm release name'
+    required: false
+    default: 'app'
+  namespace:
+    description: 'Kubernetes namespace to deploy to'
+    required: false
+    default: 'default'
+  image-repository:
+    description: 'Docker image repository (for --set image.repository)'
+    required: false
+  image-tag:
+    description: 'Docker image tag (for --set image.tag)'
+    required: false
+  values-file:
+    description: 'Path to values file (relative to chart)'
+    required: false
+  values:
+    description: 'Additional Helm values as YAML string'
+    required: false
+  set-values:
+    description: 'Additional --set values (comma-separated: key1=value1,key2=value2)'
+    required: false
+  timeout:
+    description: 'Helm deployment timeout'
+    required: false
+    default: '10m'
+  wait:
+    description: 'Wait for deployment to complete'
+    required: false
+    default: 'true'
+  create-namespace:
+    description: 'Create namespace if it does not exist'
+    required: false
+    default: 'true'
+  helm-version:
+    description: 'Helm version to install'
+    required: false
+    default: 'latest'
+  kubectl-version:
+    description: 'kubectl version to install'
+    required: false
+    default: 'latest'
+
+outputs:
+  release-status:
+    description: 'Status of the Helm release'
+    value: ${{ steps.deploy.outputs.status }}
+  chart-url:
+    description: 'Full OCI URL of the deployed chart'
+    value: ${{ steps.deploy.outputs.chart-url }}
+  namespace:
+    description: 'Namespace where the release was deployed'
+    value: ${{ inputs.namespace }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Helm
+      uses: azure/setup-helm@v4
+      with:
+        version: ${{ inputs.helm-version }}
+
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v4
+      with:
+        version: ${{ inputs.kubectl-version }}
+
+    - name: Configure Kubernetes context
+      shell: bash
+      run: |
+        echo "Configuring Kubernetes context..."
+        mkdir -p ~/.kube
+        echo "${{ inputs.kubeconfig }}" | base64 -d > ~/.kube/config
+        chmod 600 ~/.kube/config
+        
+        echo "Current context:"
+        kubectl config current-context
+        
+        echo "Cluster info:"
+        kubectl cluster-info
+
+    - name: Create namespace
+      if: inputs.create-namespace == 'true'
+      shell: bash
+      run: |
+        echo "Creating namespace: ${{ inputs.namespace }}"
+        kubectl create namespace ${{ inputs.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+
+    - name: Configure Helm registry authentication
+      shell: bash
+      run: |
+        echo "Configuring Helm registry authentication for ${{ inputs.registry }}"
+        if [ "${{ inputs.registry }}" != "docker.io" ]; then
+          helm registry login ${{ inputs.registry }} -u ${{ inputs.registry-username }} -p ${{ inputs.registry-password }}
+        else
+          helm registry login -u ${{ inputs.registry-username }} -p ${{ inputs.registry-password }}
+        fi
+
+    - name: Prepare values file
+      if: inputs.values != ''
+      shell: bash
+      run: |
+        echo "Creating temporary values file..."
+        cat > /tmp/custom-values.yaml << 'EOF'
+        ${{ inputs.values }}
+        EOF
+        echo "Custom values:"
+        cat /tmp/custom-values.yaml
+
+    - name: Deploy Helm chart
+      id: deploy
+      shell: bash
+      run: |
+        # Construct chart URL
+        if [ "${{ inputs.registry }}" != "docker.io" ]; then
+          CHART_URL="oci://${{ inputs.registry }}/${{ inputs.repository }}/${{ inputs.chart-name }}:${{ inputs.chart-version }}"
+        else
+          CHART_URL="oci://${{ inputs.repository }}/${{ inputs.chart-name }}:${{ inputs.chart-version }}"
+        fi
+        
+        echo "chart-url=${CHART_URL}" >> $GITHUB_OUTPUT
+        
+        echo "Deploying Helm chart..."
+        echo "Chart URL: ${CHART_URL}"
+        echo "Release name: ${{ inputs.release-name }}"
+        echo "Namespace: ${{ inputs.namespace }}"
+        
+        # Build helm command
+        HELM_CMD="helm upgrade --install ${{ inputs.release-name }} ${CHART_URL} --namespace ${{ inputs.namespace }}"
+        
+        # Add timeout and wait options
+        if [ "${{ inputs.wait }}" == "true" ]; then
+          HELM_CMD="${HELM_CMD} --wait"
+        fi
+        HELM_CMD="${HELM_CMD} --timeout ${{ inputs.timeout }}"
+        
+        # Add image repository and tag if provided
+        if [ -n "${{ inputs.image-repository }}" ]; then
+          HELM_CMD="${HELM_CMD} --set image.repository=${{ inputs.image-repository }}"
+        fi
+        if [ -n "${{ inputs.image-tag }}" ]; then
+          HELM_CMD="${HELM_CMD} --set image.tag=${{ inputs.image-tag }}"
+        fi
+        
+        # Add values file if provided
+        if [ -n "${{ inputs.values-file }}" ]; then
+          HELM_CMD="${HELM_CMD} --values ${{ inputs.values-file }}"
+        fi
+        if [ "${{ inputs.values }}" != "" ]; then
+          HELM_CMD="${HELM_CMD} --values /tmp/custom-values.yaml"
+        fi
+        
+        # Add custom set values
+        if [ -n "${{ inputs.set-values }}" ]; then
+          IFS=',' read -ra VALUES <<< "${{ inputs.set-values }}"
+          for value in "${VALUES[@]}"; do
+            HELM_CMD="${HELM_CMD} --set ${value}"
+          done
+        fi
+        
+        echo "Executing: ${HELM_CMD}"
+        eval ${HELM_CMD}
+        
+        echo "status=deployed" >> $GITHUB_OUTPUT
+
+    - name: Verify deployment
+      shell: bash
+      run: |
+        echo "Verifying deployment..."
+        
+        echo "Helm release status:"
+        helm status ${{ inputs.release-name }} --namespace ${{ inputs.namespace }}
+        
+        echo "Checking pods in namespace ${{ inputs.namespace }}:"
+        kubectl get pods -n ${{ inputs.namespace }} -l app.kubernetes.io/instance=${{ inputs.release-name }}
+        
+        echo "Checking services:"
+        kubectl get services -n ${{ inputs.namespace }} -l app.kubernetes.io/instance=${{ inputs.release-name }}
+        
+        echo "Deployment verification completed!"
+
+    - name: Output deployment information
+      shell: bash
+      run: |
+        echo "### 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Release:** ${{ inputs.release-name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Namespace:** ${{ inputs.namespace }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Chart:** ${{ inputs.chart-name }}:${{ inputs.chart-version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Registry:** ${{ inputs.registry }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Repository:** ${{ inputs.repository }}" >> $GITHUB_STEP_SUMMARY
+        if [ -n "${{ inputs.image-repository }}" ] && [ -n "${{ inputs.image-tag }}" ]; then
+          echo "- **Image:** ${{ inputs.image-repository }}:${{ inputs.image-tag }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Management Commands:**" >> $GITHUB_STEP_SUMMARY
+        echo '```bash' >> $GITHUB_STEP_SUMMARY
+        echo "# Check status" >> $GITHUB_STEP_SUMMARY
+        echo "helm status ${{ inputs.release-name }} -n ${{ inputs.namespace }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# View pods" >> $GITHUB_STEP_SUMMARY
+        echo "kubectl get pods -n ${{ inputs.namespace }} -l app.kubernetes.io/instance=${{ inputs.release-name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "# Rollback if needed" >> $GITHUB_STEP_SUMMARY
+        echo "helm rollback ${{ inputs.release-name }} -n ${{ inputs.namespace }}" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
