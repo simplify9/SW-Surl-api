@@ -46,7 +46,7 @@ jobs:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
       
       # Kubernetes
-      kubeconfig: ${{ secrets.KUBECONFIG }}
+      kubeconfig: ${{ secrets.S9Dev_KUBECONFIG }}
       
       # GitHub token for tagging
       github-token: ${{ secrets.S9_GITHUB_TOKEN }}
