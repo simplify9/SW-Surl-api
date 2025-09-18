@@ -218,7 +218,7 @@ jobs:
           chart-path: ${{ inputs.chart-path }}
           version: ${{ needs.version.outputs.version }}
           registry: ${{ env.CONTAINER_REGISTRY }}
-          repository: ${{ github.repository }}
+          repository: ${{ github.repository }}/charts
           username: ${{ secrets.registry-username || github.actor }}
           password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
           image-repository: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}
