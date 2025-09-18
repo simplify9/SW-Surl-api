@@ -51,7 +51,7 @@ on:
       docker-platforms:
         description: 'Target platforms for Docker build'
         required: false
-        default: 'linux/amd64,linux/arm64'
+        default: 'linux/amd64'
         type: string
       
       # Helm configuration
@@ -135,7 +135,7 @@ on:
 env:
   # Set default registry and image name
   CONTAINER_REGISTRY: ${{ inputs.container-registry }}
-  IMAGE_NAME: ${{ inputs.image-name || github.event.repository.name }}
+  IMAGE_NAME: ${{ inputs.image-name || github.repository }}
 
 jobs:
   version:

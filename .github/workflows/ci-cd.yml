@@ -28,7 +28,7 @@ jobs:
       
       # Deployment configuration
       deploy-to-development: true
-      development-namespace: 'surl-development'
+      development-namespace: 'playground'
       
       # Registry configuration
       container-registry: 'ghcr.io'

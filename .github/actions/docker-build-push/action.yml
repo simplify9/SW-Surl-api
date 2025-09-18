@@ -30,7 +30,7 @@ inputs:
   platforms:
     description: 'Target platforms for build'
     required: false
-    default: 'linux/amd64,linux/arm64'
+    default: 'linux/amd64'
   push:
     description: 'Push image to registry'
     required: false
