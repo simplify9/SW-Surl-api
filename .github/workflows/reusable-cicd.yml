@@ -199,7 +199,7 @@ jobs:
 
       - name: Build and push Docker image
         id: docker
-        uses: ./.github/actions/docker-build-push
+        uses: simplify9/sw-workflows/actions/docker-build-push
         with:
           registry: ${{ env.CONTAINER_REGISTRY }}
           image-name: ${{ env.IMAGE_NAME }}
@@ -212,7 +212,7 @@ jobs:
 
       - name: Package and push Helm chart
         id: helm
-        uses: ./.github/actions/helm-package-push
+        uses: simplify9/sw-workflows/actions/helm-package-push
         with:
           chart-name: ${{ inputs.chart-name }}
           chart-path: ${{ inputs.chart-path }}
@@ -232,7 +232,7 @@ jobs:
     environment: development
     steps:
       - name: Deploy to Development
-        uses: ./.github/actions/helm-deploy
+        uses: simplify9/sw-workflows/actions/helm-deploy
         with:
           chart-name: ${{ inputs.chart-name }}
           chart-version: ${{ needs.version.outputs.version }}
