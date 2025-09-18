@@ -6,156 +6,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  version:
-    runs-on: ubuntu-latest
-    env:
-      MAJOR: '8'
-      MINOR: '0'
-    outputs:
-      version: ${{ steps.semver.outputs.version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Determine semantic version
-        id: semver
-        uses: simplify9/sw-workflows/actions/determine-semver@main
-        with:
-          major: ${{ env.MAJOR }}
-          minor: ${{ env.MINOR }}
- 
-      - name: Tag new version on GitHub origin
-        uses: simplify9/sw-workflows/actions/tag-github-origin@main
-        with:
-          github-token: ${{ secrets.S9_GITHUB_TOKEN }}
-          repository: ${{ github.repository }}
-          tag: ${{ needs.version.outputs.version }}
-          sha: ${{ github.sha }}          
-
-
-
-  nuget:
-    runs-on: ubuntu-latest
-    needs: version
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Dotnet Restore, Build, and Test
-        uses: simplify9/sw-workflows/actions/dotnet-build@main
-        with:
-          projects: "**/*.csproj"
-          test-projects: "**/*UnitTests/*.csproj"
-          configuration: "Release"
-          dotnet-version: "8.0.x"
-          run-tests: 'false'
-
-      - name: Pack and Push NuGet Package
-        uses: simplify9/sw-workflows/actions/dotnet-pack-push@main
-        with:
-          projects: "SW.Surl.Sdk/SW.Surl.Sdk.csproj"
-          configuration: "Release"
-          version: ${{ needs.version.outputs.version }}
-          api-key: ${{ secrets.SWNUGETKEY }}
-          nuget-source: "https://api.nuget.org/v3/index.json"
-
-
-
-  ci:
-    runs-on: ubuntu-latest
-    needs: version
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build and push Docker image
-        uses: ./.github/actions/docker-build-push
-        with:
-          registry: ${{ vars.DOCKER_REGISTRY || 'ghcr.io' }}
-          image-name: ${{ vars.IMAGE_NAME || github.repository }}
-          version: ${{ needs.version.outputs.version }}
-          username: ${{ vars.REGISTRY_USERNAME || github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Package and push Helm chart
-        uses: ./.github/actions/helm-package-push
-        with:
-          chart-name: surl
-          version: ${{ needs.version.outputs.version }}
-          registry: ${{ vars.HELM_REGISTRY || vars.DOCKER_REGISTRY || 'ghcr.io' }}
-          repository: ${{ vars.HELM_REPOSITORY || github.repository }}
-          username: ${{ vars.REGISTRY_USERNAME || github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          image-repository: ghcr.io/${{ github.repository }}
-          image-tag: ${{ needs.version.outputs.version }}
-          update-image-values: 'true'
-
-  deploy-development:
-    runs-on: ubuntu-latest
-    needs: [version, ci]
-    environment: development
-    steps:
-      - name: Deploy to Development
-        uses: ./.github/actions/helm-deploy
-        with:
-          chart-name: surl
-          chart-version: ${{ needs.version.outputs.version }}
-          registry: ${{ vars.HELM_REGISTRY || vars.DOCKER_REGISTRY || 'ghcr.io' }}
-          repository: ${{ vars.HELM_REPOSITORY || github.repository }}
-          registry-username: ${{ vars.REGISTRY_USERNAME || github.actor }}
-          registry-password: ${{ secrets.GITHUB_TOKEN }}
-          kubeconfig: ${{ secrets.KUBECONFIG }}
-          release-name: ${{ vars.RELEASE_NAME || 'surl' }}
-          namespace: ${{ vars.KUBERNETES_NAMESPACE || 'surl-development' }}
-          image-repository: ghcr.io/${{ github.repository }}
-          image-tag: ${{ needs.version.outputs.version }}
-          values: |
-            replicaCount: ${{ vars.REPLICA_COUNT || 1 }}
-            service:
-              type: ${{ vars.SERVICE_TYPE || 'ClusterIP' }}
-              port: 80
-            ingress:
-              enabled: ${{ vars.INGRESS_ENABLED || 'true' }}
-              hosts:
-                - host: ${{ vars.INGRESS_HOST || 'dev-api.surl.com' }}
-                  paths:
-                    - path: /
-                      pathType: Prefix
-            resources:
-              limits:
-                cpu: ${{ vars.CPU_LIMIT || '500m' }}
-                memory: ${{ vars.MEMORY_LIMIT || '512Mi' }}
-              requests:
-                cpu: ${{ vars.CPU_REQUEST || '100m' }}
-                memory: ${{ vars.MEMORY_REQUEST || '128Mi' }}
-          set-values: "global.environment=development,buildID=${{ github.run_id }}"
-
-  # Future environment jobs would look like this:
-  # deploy-staging:
-  #   runs-on: ubuntu-latest
-  #   needs: [version, ci]
-  #   environment: staging
-  #   steps:
-  #     - name: Deploy to Staging
-  #       uses: ./.github/actions/helm-deploy
-  #       with:
-  #         chart-name: surl
-  #         chart-version: ${{ needs.version.outputs.version }}
-  #         registry: ghcr.io
-  #         repository: ${{ github.repository }}
-  #         registry-username: ${{ github.actor }}
-  #         registry-password: ${{ secrets.GITHUB_TOKEN }}
-  #         kubeconfig: ${{ secrets.STAGING_KUBECONFIG }}
-  #         release-name: surl-staging
-  #         namespace: surl-staging
-  #         image-repository: ghcr.io/${{ github.repository }}
-  #         image-tag: ${{ needs.version.outputs.version }}
-  #         values: |
-  #           replicaCount: 1
-  #           service:
-  #             type: ClusterIP
-  #           ingress:
-  #             enabled: true
-  #             hosts:
-  #               - host: staging-api.surl.com
-  #         set-values: "global.environment=staging,buildID=${{ github.run_id }}"
+  cicd:
+    uses: ./.github/workflows/reusable-cicd.yml
+    with:
+      # Version configuration
+      major-version: '8'
+      minor-version: '0'
+      
+      # .NET configuration
+      dotnet-version: '8.0.x'
+      nuget-projects: 'SW.Surl.Sdk/SW.Surl.Sdk.csproj'
+      run-tests: 'false'
+      
+      # Docker configuration
+      dockerfile-path: './Dockerfile'
+      docker-context: '.'
+      
+      # Helm configuration
+      chart-name: 'surl'
+      chart-path: './chart'
+      
+      # Deployment configuration
+      deploy-to-development: true
+      development-namespace: 'surl-development'
+      
+      # Registry configuration
+      container-registry: 'ghcr.io'
+      
+      # Helm deployment values
+      helm-set-values: 'ingress.enabled=true,service.type=LoadBalancer,replicas=2'
+      
+    secrets:
+      # NuGet secrets
+      nuget-api-key: ${{ secrets.SWNUGETKEY }}
+      nuget-source: 'https://api.nuget.org/v3/index.json'
+      
+      # Container registry (using GitHub packages)
+      registry-username: ${{ github.actor }}
+      registry-password: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Kubernetes
+      kubeconfig: ${{ secrets.KUBECONFIG }}
+      
+      # GitHub token for tagging
+      github-token: ${{ secrets.S9_GITHUB_TOKEN }}
