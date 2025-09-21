@@ -237,12 +237,10 @@ jobs:
           chart-name: ${{ inputs.chart-name }}
           chart-version: ${{ needs.version.outputs.version }}
           registry: ${{ env.CONTAINER_REGISTRY }}
-          repository: ${{ github.repository }}
+          repository: charts
           registry-username: ${{ secrets.registry-username || github.actor }}
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
           kubeconfig: ${{ secrets.kubeconfig }}
           release-name: ${{ inputs.chart-name }}-dev
           namespace: ${{ inputs.development-namespace }}
-          image-repository: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}
-          image-tag: ${{ needs.version.outputs.version }}
           set-values: ${{ inputs.helm-set-values || '' }}
