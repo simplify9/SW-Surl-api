@@ -1,4 +1,4 @@
-name: 'Reusable CI/CD Pipeline'
+name: 'Reusable SW CI/CD Pipeline'
 
 on:
   workflow_call:
@@ -161,7 +161,7 @@ jobs:
           tag: ${{ steps.semver.outputs.version }}
           sha: ${{ github.sha }}
 
-  build:
+  nuget:
     runs-on: ubuntu-latest
     needs: version
     if: ${{ inputs.nuget-projects != '' }}
