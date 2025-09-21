@@ -237,7 +237,7 @@ jobs:
           chart-name: ${{ inputs.chart-name }}
           chart-version: ${{ needs.version.outputs.version }}
           registry: ${{ env.CONTAINER_REGISTRY }}
-          repository: charts
+          repository: ${{ github.repository_owner }}/charts
           registry-username: ${{ secrets.registry-username || github.actor }}
           registry-password: ${{ secrets.registry-password || secrets.GITHUB_TOKEN }}
           kubeconfig: ${{ secrets.kubeconfig }}
