@@ -33,8 +33,8 @@ jobs:
       # Registry configuration
       container-registry: 'ghcr.io'
       
-      # Helm deployment values
-      helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",db="$(dbcs)",ingress.path="/api",ingress.tls[0].secretName="surl-tls",ingress.annotations."cert-manager\.io/cluster-issuer"="letsencrypt-nginx"'
+      # Helm deployment values  
+      helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",db="$(dbcs)",ingress.path="/api",ingress.tls[0].secretName="surl-tls",ingress.annotations."cert-manager\.io\/cluster-issuer"="letsencrypt-nginx"'
       
     secrets:
       # NuGet secrets
