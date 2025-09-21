@@ -244,3 +244,4 @@ jobs:
           release-name: ${{ inputs.chart-name }}-dev
           namespace: ${{ inputs.development-namespace }}
           set-values: ${{ inputs.helm-set-values || '' }}
+          timeout: '1m'
