@@ -245,4 +245,4 @@ jobs:
           namespace: ${{ inputs.development-namespace }}
           image-repository: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}
           image-tag: ${{ needs.version.outputs.version }}
-          set-values: "${{ inputs.helm-set-values && format(',{0}', inputs.helm-set-values) || '' }}"
+          set-values: ${{ inputs.helm-set-values || '' }}
