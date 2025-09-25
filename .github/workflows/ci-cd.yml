@@ -50,5 +50,5 @@ jobs:
       github-token: ${{ secrets.S9_GITHUB_TOKEN }}
 
       # Helm deployment values  
-      helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",db="${{ secrets.dbcs }}",ingress.path="/api",ingress.tls[0].secretName="surl-tls"'
+      helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",db="${{ secrets.DBCS }}",ingress.path="/api",ingress.tls[0].secretName="surl-tls"'
 
