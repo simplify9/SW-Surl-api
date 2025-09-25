@@ -7,7 +7,7 @@ on:
 
 jobs:
   cicd:
-    uses: simplify9/.github/workflows/sw-cicd.yml@main
+    uses: simplify9/.github/.github/workflows/sw-cicd.yml@main
     with:
       # Version configuration
       major-version: '8'
