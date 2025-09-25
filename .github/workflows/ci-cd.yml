@@ -52,6 +52,7 @@ jobs:
       # GitHub token for tagging
       github-token: ${{ secrets.S9_GITHUB_TOKEN }}
 
+      # Helm secret values
       helm-set-secret-values: db="${{ secrets.DBCS }}" 
 
 
