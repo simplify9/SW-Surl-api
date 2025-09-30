@@ -53,6 +53,6 @@ jobs:
       github-token: ${{ secrets.S9_GITHUB_TOKEN }}
 
       # Helm secret values (using escaped connection string)
-      helm-set-secret-values: ${{ secrets.DBCS_ESCAPED }} 
+      helm-set-secret-values: 'db="${{ secrets.DBCS_ESCAPED }}"' 
 
 
