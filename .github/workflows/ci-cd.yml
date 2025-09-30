@@ -8,6 +8,7 @@ on:
 jobs:
   cicd:
     uses: simplify9/.github/.github/workflows/sw-cicd.yml@main
+    secrets: inherit
     with:
       # Version configuration
       major-version: '8'
@@ -37,24 +38,6 @@ jobs:
       helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls"'
 
       # Map GitHub secrets to Helm values
-      helm-secret-mappings: 'db:DBCS_ESCAPED'
-      
-    secrets:
-      # Database connection string secret
-      DBCS_ESCAPED: ${{ secrets.DBCS_ESCAPED }}
-      
-      # NuGet secrets
-      nuget-api-key: ${{ secrets.SWNUGETKEY }}
-      nuget-source: 'https://api.nuget.org/v3/index.json'
-      
-      # Container registry (using GitHub packages)
-      registry-username: ${{ github.actor }}
-      registry-password: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Kubernetes
-      kubeconfig: ${{ secrets.S9Dev_KUBECONFIG }}
-      
-      # GitHub token for tagging
-      github-token: ${{ secrets.S9_GITHUB_TOKEN }} 
+      helm-secret-mappings: 'db:DBCS_ESCAPED' 
 
 
