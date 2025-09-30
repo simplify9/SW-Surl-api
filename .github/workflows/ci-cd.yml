@@ -34,10 +34,13 @@ jobs:
       container-registry: 'ghcr.io'
 
       # Helm deployment values  
-      helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls"'
+      helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="${{ secrets.DBCS }}"'
 
       
     secrets:
+      # Database connection string
+      database-connection-string: ${{ secrets.DBCS }}
+      
       # NuGet secrets
       nuget-api-key: ${{ secrets.SWNUGETKEY }}
       nuget-source: 'https://api.nuget.org/v3/index.json'
@@ -50,9 +53,6 @@ jobs:
       kubeconfig: ${{ secrets.S9Dev_KUBECONFIG }}
       
       # GitHub token for tagging
-      github-token: ${{ secrets.S9_GITHUB_TOKEN }}
-
-      # Helm secret values
-      helm-set-secret-values: 'db="${{ secrets.DBCS }}"' 
+      github-token: ${{ secrets.S9_GITHUB_TOKEN }} 
 
 
