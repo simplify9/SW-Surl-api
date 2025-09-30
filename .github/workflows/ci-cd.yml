@@ -34,19 +34,13 @@ jobs:
       container-registry: 'ghcr.io'
 
       # Helm deployment values  
-      helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls"'
-
-      # Map custom application secrets to Helm values
-      helm-secret-mappings: 'db:DBCS_ESCAPED'
+      helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="${{ secrets.DBCS_ESCAPED }}"'
     secrets:
       # Built-in workflow secrets (explicit mapping)
       nuget-api-key: ${{ secrets.SWNUGETKEY }}
       kubeconfig: ${{ secrets.S9Dev_KUBECONFIG }}
       github-token: ${{ secrets.S9_GITHUB_TOKEN }}
       registry-username: ${{ github.actor }}
-      registry-password: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Custom application secrets for Helm mapping
-      DBCS_ESCAPED: ${{ secrets.DBCS_ESCAPED }} 
+      registry-password: ${{ secrets.GITHUB_TOKEN }} 
 
 
