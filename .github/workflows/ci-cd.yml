@@ -37,7 +37,7 @@ jobs:
       # Helm deployment values  
       helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls"'
 
-      # Map GitHub secrets to Helm values
-      helm-secret-mappings: 'db:DBCS_ESCAPED' 
+      # Map GitHub secrets to Helm values and built-in workflow secrets
+      helm-secret-mappings: 'db:DBCS_ESCAPED,kubeconfig:S9Dev_KUBECONFIG,nuget-api-key:SWNUGETKEY,github-token:S9_GITHUB_TOKEN' 
 
 
