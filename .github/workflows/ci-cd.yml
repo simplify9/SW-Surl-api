@@ -53,6 +53,6 @@ jobs:
       github-token: ${{ secrets.S9_GITHUB_TOKEN }}
 
       # Helm secret values
-      helm-set-secret-values: db="${{ secrets.DBCS }}" 
+      helm-set-secret-values: 'db="${{ secrets.DBCS }}"' 
 
 
