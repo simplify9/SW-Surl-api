@@ -33,18 +33,9 @@ jobs:
       # Registry configuration
       container-registry: 'ghcr.io'
 
-      # Helm deployment values using variable reference
+      # Helm deployment values using variable reference  
       helm-set-values: |
         ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="${DBCS_DUMMY}"
-    secrets:
-      # Built-in workflow secrets (explicit mapping)
-      nuget-api-key: ${{ secrets.SWNUGETKEY }}
-      kubeconfig: ${{ secrets.S9Dev_KUBECONFIG }}
-      github-token: ${{ secrets.S9_GITHUB_TOKEN }}
-      registry-username: ${{ github.actor }}
-      registry-password: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Database connection string for helm value substitution
-      DBCS_DUMMY: ${{ secrets.DBCS_DUMMY }} 
+    secrets: inherit 
 
 
