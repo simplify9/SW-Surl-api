@@ -34,7 +34,14 @@ jobs:
       container-registry: 'ghcr.io'
 
       # Helm deployment values  
-      helm-set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="${{ secrets.DBCS_ESCAPED }}"'
+      helm-set-values: |
+        ingress.enabled=true,
+        replicas=1,
+        ingress.hosts={surl.sf9.io},
+        environment="Staging",
+        ingress.path="/api",
+        ingress.tls[0].secretName="surl-tls",
+        db="${{ secrets.DBCS_ESCAPED }}"
     secrets:
       # Built-in workflow secrets (explicit mapping)
       nuget-api-key: ${{ secrets.SWNUGETKEY }}

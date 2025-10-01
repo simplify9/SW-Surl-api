@@ -24,6 +24,37 @@ SW Surl is a lightweight, high-performance URL shortening service built with .NE
 - ☸️ **Kubernetes Native**: Helm chart included for easy deployment
 - 🗄️ **Database Agnostic**: Configurable database connection
 
+## CI/CD Configuration
+
+This project uses the Simplify9 reusable workflow `sw-cicd.yml` for automated deployment. The workflow is configured to:
+
+- Build and test the .NET application
+- Package the NuGet SDK
+- Build and push Docker images to GitHub Container Registry
+- Deploy to Kubernetes using Helm charts
+- Handle database connection strings securely through GitHub secrets
+
+### Required GitHub Secrets
+
+The following secrets must be configured in your repository or organization:
+
+#### Organization Secrets
+- `S9Dev_KUBECONFIG`: Base64 encoded kubeconfig for Kubernetes deployment
+- `SWNUGETKEY`: NuGet API key for package publishing
+- `S9_GITHUB_TOKEN`: GitHub token for workflow operations
+
+#### Repository Secrets
+- `DBCS_ESCAPED`: Database connection string (properly escaped for Helm)
+
+### Deployment Configuration
+
+The application is deployed with the following configuration:
+- **Environment**: Staging
+- **Namespace**: playground
+- **Ingress**: Enabled with TLS (surl.sf9.io)
+- **Database**: Connection string passed securely via Helm values
+- **Registry**: GitHub Container Registry (ghcr.io)
+
 ## Quick Start
 
 ### Using Docker
