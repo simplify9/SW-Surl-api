@@ -42,9 +42,6 @@ jobs:
       kubeconfig: ${{ secrets.S9Dev_KUBECONFIG }}
       github-token: ${{ secrets.S9_GITHUB_TOKEN }}
       registry-username: ${{ github.actor }}
-      registry-password: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Database connection string variable
-      DBCS_ESCAPED: ${{ secrets.DBCS_ESCAPED }} 
+      registry-password: ${{ secrets.GITHUB_TOKEN }} 
 
 
