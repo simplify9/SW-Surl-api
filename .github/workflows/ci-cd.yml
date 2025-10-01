@@ -35,13 +35,7 @@ jobs:
 
       # Helm deployment values using variable reference
       helm-set-values: |
-        ingress.enabled=true,
-        replicas=1,
-        ingress.hosts={surl.sf9.io},
-        environment="Staging",
-        ingress.path="/api",
-        ingress.tls[0].secretName="surl-tls",
-        db="${DBCS_ESCAPED}"
+        ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="${DBCS_ESCAPED}"
     secrets:
       # Built-in workflow secrets (explicit mapping)
       nuget-api-key: ${{ secrets.SWNUGETKEY }}
