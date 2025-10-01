@@ -33,9 +33,9 @@ jobs:
       # Registry configuration
       container-registry: 'ghcr.io'
 
-      # Helm deployment values - hardcoded dummy DB for testing
+      # Helm deployment values - properly escaped dummy DB for testing
       helm-set-values: |
-        ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="Server=dummy-test.postgres.database.azure.com;Database=surl_test;User Id=testuser;Password=dummypass123;Port=5432;SslMode=Require;"
+        ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="Server=dummy-test.postgres.database.azure.com\;Database=surl_test\;User\ Id=testuser\;Password=dummypass123\;Port=5432\;SslMode=Require\;"
     secrets:
       # Built-in workflow secrets (explicit mapping for org secrets)
       nuget-api-key: ${{ secrets.SWNUGETKEY }}
