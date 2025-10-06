@@ -5,46 +5,145 @@ on:
     branches: [main]
   workflow_dispatch:
 
-jobs:
-  cicd:
-    uses: simplify9/.github/.github/workflows/sw-cicd.yml@main
-    with:
-      # Version configuration
-      major-version: '8'
-      minor-version: '0'
-      
-      # .NET configuration
-      dotnet-version: '8.0.x'
-      nuget-projects: 'SW.Surl.Sdk/SW.Surl.Sdk.csproj'
-      run-tests: 'false'
-      
-      # Docker configuration
-      dockerfile-path: './Dockerfile'
-      docker-context: '.'
-      
-      # Helm configuration
-      chart-name: 'surl'
-      chart-path: './chart'
-      
-      # Deployment configuration
-      deploy-to-development: true
-      development-namespace: 'playground'
-      
-      # Registry configuration
-      container-registry: 'ghcr.io'
+# 🔧 PROJECT CONFIGURATION VARIABLES
+# Change these values when copying to other projects
+env:
+  # Version configuration
+  MAJOR_VERSION: '8'
+  MINOR_VERSION: '0'
+  
+  # .NET configuration  
+  DOTNET_VERSION: '8.0.x'
+  NUGET_PROJECTS: 'SW.Surl.Sdk/SW.Surl.Sdk.csproj'  # Leave empty '' to skip NuGet publishing
+  TEST_PROJECTS: '**/*UnitTests/*.csproj'
+  RUN_TESTS: 'false'
+  
+  # Docker configuration
+  DOCKERFILE_PATH: './Dockerfile'
+  DOCKER_CONTEXT: '.'
+  DOCKER_PLATFORMS: 'linux/amd64'
+  
+  # Helm configuration
+  CHART_NAME: 'surl'
+  CHART_PATH: './chart'
+  
+  # Deployment configuration
+  DEVELOPMENT_NAMESPACE: 'playground'
+  
+  # Registry configuration
+  CONTAINER_REGISTRY: 'ghcr.io'
+  
+  # Computed values (don't change these)
+  IMAGE_NAME: ${{ github.repository }}
 
-      # Helm deployment values - properly escaped dummy DB for testing
-      helm-set-values: |
-        ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="Server=dummy-test.postgres.database.azure.com\;Database=surl_test\;User\ Id=testuser\;Password=dummypass123\;Port=5432\;SslMode=Require\;"
-    secrets:
-      # Built-in workflow secrets (explicit mapping for org secrets)
-      nuget-api-key: ${{ secrets.SWNUGETKEY }}
-      kubeconfig: ${{ secrets.S9Dev_KUBECONFIG }}
-      github-token: ${{ secrets.S9_GITHUB_TOKEN }}
-      registry-username: ${{ github.actor }}
-      registry-password: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Restore nuget-source to its proper function (not repurposed)
-      # nuget-source: (using default https://api.nuget.org/v3/index.json) 
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.semver.outputs.version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine semantic version
+        id: semver
+        uses: simplify9/.github/.github/actions/determine-semver@main
+        with:
+          major: ${{ env.MAJOR_VERSION }}
+          minor: ${{ env.MINOR_VERSION }}
+ 
+      - name: Tag new version on GitHub origin
+        if: ${{ env.NUGET_PROJECTS != '' }}
+        uses: simplify9/.github/.github/actions/tag-github-origin@main
+        with:
+          github-token: ${{ secrets.S9_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          tag: ${{ steps.semver.outputs.version }}
+          sha: ${{ github.sha }}
+
+  build:
+    runs-on: ubuntu-latest
+    needs: version
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dotnet Restore, Build, and Test
+        uses: simplify9/.github/.github/actions/dotnet-build@main
+        with:
+          projects: "**/*.csproj"
+          test-projects: ${{ env.TEST_PROJECTS }}
+          configuration: "Release"
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+          run-tests: ${{ env.RUN_TESTS }}
+
+      - name: Pack and Push NuGet Package
+        uses: simplify9/.github/.github/actions/dotnet-pack-push@main
+        with:
+          projects: ${{ env.NUGET_PROJECTS }}
+          configuration: "Release"
+          version: ${{ needs.version.outputs.version }}
+          api-key: ${{ secrets.SWNUGETKEY }}
+          nuget-source: 'https://api.nuget.org/v3/index.json'
+
+  ci:
+    runs-on: ubuntu-latest
+    needs: version
+    outputs:
+      docker-image: ${{ steps.docker.outputs.image-tags }}
+      helm-chart: ${{ steps.helm.outputs.chart-url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build and push Docker image
+        id: docker
+        uses: ./.github/actions/docker-build-push
+        with:
+          registry: ${{ env.CONTAINER_REGISTRY }}
+          image-name: ${{ env.IMAGE_NAME }}
+          version: ${{ needs.version.outputs.version }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          dockerfile: ${{ env.DOCKERFILE_PATH }}
+          context: ${{ env.DOCKER_CONTEXT }}
+          platforms: ${{ env.DOCKER_PLATFORMS }}
+
+      - name: Package and push Helm chart
+        id: helm
+        uses: ./.github/actions/helm-package-push
+        with:
+          chart-name: ${{ env.CHART_NAME }}
+          chart-path: ${{ env.CHART_PATH }}
+          version: ${{ needs.version.outputs.version }}
+          registry: ${{ env.CONTAINER_REGISTRY }}
+          repository: ${{ github.repository_owner }}/charts
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          image-repository: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}
+          image-tag: ${{ needs.version.outputs.version }}
+          update-image-values: 'true'
+
+  deploy-development:
+    runs-on: ubuntu-latest
+    needs: [version, ci]
+    environment: development
+    steps:
+      - name: Deploy to Development
+        uses: ./.github/actions/helm-deploy
+        with:
+          chart-name: ${{ env.CHART_NAME }}
+          chart-version: ${{ needs.version.outputs.version }}
+          registry: ${{ env.CONTAINER_REGISTRY }}
+          repository: ${{ github.repository_owner }}/charts
+          registry-username: ${{ github.actor }}
+          registry-password: ${{ secrets.GITHUB_TOKEN }}
+          kubeconfig: ${{ secrets.S9Dev_KUBECONFIG }}
+          release-name: ${{ env.CHART_NAME }}-dev
+          namespace: ${{ env.DEVELOPMENT_NAMESPACE }}
+          image-repository: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}
+          image-tag: ${{ needs.version.outputs.version }}
+          # 🔧 PROJECT HELM VALUES - Change these for your project
+          set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="${{ secrets.dbcs }}"' 
 
 
