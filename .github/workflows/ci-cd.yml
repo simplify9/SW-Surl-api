@@ -18,14 +18,9 @@ env:
   TEST_PROJECTS: '**/*UnitTests/*.csproj'
   RUN_TESTS: 'false'
   
-  # Docker configuration
-  DOCKERFILE_PATH: './Dockerfile'
-  DOCKER_CONTEXT: '.'
-  DOCKER_PLATFORMS: 'linux/amd64'
   
   # Helm configuration
   CHART_NAME: 'surl'
-  CHART_PATH: './chart'
   
   # Deployment configuration
   DEVELOPMENT_NAMESPACE: 'playground'
@@ -105,16 +100,16 @@ jobs:
           version: ${{ needs.version.outputs.version }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-          dockerfile: ${{ env.DOCKERFILE_PATH }}
-          context: ${{ env.DOCKER_CONTEXT }}
-          platforms: ${{ env.DOCKER_PLATFORMS }}
+          dockerfile: './Dockerfile'
+          context: '.'
+          platforms: 'linux/amd64'
 
       - name: Package and push Helm chart
         id: helm
         uses: simplify9/.github/.github/actions/helm-package-push@main
         with:
           chart-name: ${{ env.CHART_NAME }}
-          chart-path: ${{ env.CHART_PATH }}
+          chart-path: './chart'
           version: ${{ needs.version.outputs.version }}
           registry: ${{ env.CONTAINER_REGISTRY }}
           repository: ${{ github.repository_owner }}/charts
