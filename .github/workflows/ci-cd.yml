@@ -124,8 +124,15 @@ jobs:
     needs: [version, ci]
     environment: development
     steps:
+      - name: Prepare deployment variables
+        id: vars
+        run: |
+          # Convert repository name to lowercase for container registry compatibility
+          REPO_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          echo "image-repository=${{ env.CONTAINER_REGISTRY }}/${REPO_LOWER}" >> $GITHUB_OUTPUT
+          
       - name: Deploy to Development
-        uses: simplify9/.github/.github/actions/helm-deploy@main
+        uses: ./.github/actions/helm-deploy
         with:
           chart-name: ${{ env.CHART_NAME }}
           chart-version: ${{ needs.version.outputs.version }}
@@ -136,7 +143,7 @@ jobs:
           kubeconfig: ${{ secrets.S9Dev_KUBECONFIG }}
           release-name: ${{ env.CHART_NAME }}-dev
           namespace: ${{ env.DEVELOPMENT_NAMESPACE }}
-          image-repository: ${{ env.CONTAINER_REGISTRY }}/${{ github.repository }}
+          image-repository: ${{ steps.vars.outputs.image-repository }}
           image-tag: ${{ needs.version.outputs.version }}
           # 🔧 PROJECT HELM VALUES - Change these for your project
           set-values: 'ingress.enabled=true,replicas=1,ingress.hosts={surl.sf9.io},environment="Staging",ingress.path="/api",ingress.tls[0].secretName="surl-tls",db="${{ secrets.dbcs }}"' 
