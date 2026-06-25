@@ -6,10 +6,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-concurrency:
-  group: cicd-gateway-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
 # contents: write -> tag job. packages: write -> push the image to GHCR, publish
 # the Helm chart to GHCR OCI, and pull the OCI chart back for the deploy.
 permissions:
@@ -34,9 +30,10 @@ jobs:
 
       chart-name: 'surl'                    # must match chart/Chart.yaml name:
       chart-path: './chart'
+      chart-repo-url: https://charts.sf9.io
 
       # 1) Publish the Helm chart to GHCR OCI only (as the old pipeline did)
-      chart-publish-method: 'github-oci'
+      chart-publish-method: 'both'
 
       # Image stays on GHCR (pinned lowercase to avoid the mixed-case repo name)
       container-registry: 'ghcr.io'
@@ -65,6 +62,10 @@ jobs:
       # OCI push + git tagging use github-token below.
       registry-username: ${{ github.actor }}
       registry-password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Required for 'both' and 'chartmuseum' publish methods: ───────────────
+      chartmuseum-username: ${{ secrets.CM_USER }}
+      chartmuseum-password: ${{ secrets.CM_PASSWORD }}
 
       # NuGet API key (publishes to nuget.org, the reusable's default feed)
       nuget-api-key: ${{ secrets.SWNUGETKEY }}
