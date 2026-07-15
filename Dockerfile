@@ -3,7 +3,7 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY ["SW.Surl.Web/SW.Surl.Web.csproj", "SW.Surl.Web/"]
 COPY ["SW.Surl.Sdk/SW.Surl.Sdk.csproj", "SW.Surl.Sdk/"]
