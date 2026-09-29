@@ -61,7 +61,7 @@ jobs:
       helm-set-values: 'global.environment=Development,replicaCount=1'
     secrets:
       # Image push to GHCR uses the built-in token (registry-password); the chart
-      # OCI push + git tagging use github-token below.
+      # OCI push + pull use the built-in GITHUB_TOKEN inside the reusable.
       registry-username: ${{ github.actor }}
       registry-password: ${{ secrets.GITHUB_TOKEN }}
 
@@ -75,9 +75,9 @@ jobs:
       # Gateway-API cluster kubeconfig (V2)
       kubeconfig-gateway: ${{ secrets.S9DEV_KUBECONFIG_V2 }}
 
-      # Custom PAT used for git tagging only (the GHCR chart push uses the
-      # built-in GITHUB_TOKEN, so this PAT does not need write:packages).
-      github-token: ${{ secrets.S9_GITHUB_TOKEN }}
+      # Tagging uses the job's built-in GITHUB_TOKEN (contents: write is granted
+      # above). The org PAT used here before expired (HTTP 401).
+      github-token: ${{ secrets.GITHUB_TOKEN }}
 
       # App configuration passed to helm --set-string during deploy (masked)
       helm-set-secret-values: 'db=${{ secrets.DBCS }}'
