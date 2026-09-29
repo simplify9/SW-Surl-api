@@ -41,7 +41,6 @@ The following secrets must be configured in your repository or organization:
 #### Organization Secrets
 - `S9Dev_KUBECONFIG`: Base64 encoded kubeconfig for Kubernetes deployment
 - `SWNUGETKEY`: NuGet API key for package publishing
-- `S9_GITHUB_TOKEN`: GitHub token for workflow operations
 
 #### Repository Secrets
 - `DBCS_ESCAPED`: Database connection string (properly escaped for Helm)
