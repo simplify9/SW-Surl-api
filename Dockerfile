@@ -1,5 +1,7 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
+# .NET 8+ listens on 8080 by default; the surl Helm chart sends traffic to containerPort 80.
+ENV ASPNETCORE_HTTP_PORTS=80
 EXPOSE 80
 EXPOSE 443
 
