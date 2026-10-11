@@ -19,9 +19,9 @@ jobs:
       github.event_name == 'workflow_dispatch' }}
     uses: simplify9/.github/.github/workflows/reusable-service-cicd.yml@main
     with:
-      major-version: '8'
+      major-version: '10'
       minor-version: '0'
-      dotnet-version: '8.0.x'
+      dotnet-version: '10.0.x'
 
       # Build + push the SDK NuGet package (tests off, as before)
       nuget-projects: 'SW.Surl.Sdk/SW.Surl.Sdk.csproj'
