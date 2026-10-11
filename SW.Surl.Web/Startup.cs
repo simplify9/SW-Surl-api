@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -52,6 +53,11 @@ namespace SW.Surl.Web
             services.AddDbContext<SurlDbContext>(c =>
             {
                 c.EnableSensitiveDataLogging(true);
+                // created_on is timestamp without time zone in the database but the model maps DateTime
+                // to timestamptz (Npgsql 6+), which EF 8 ignored and EF 9+ reports as a pending change and
+                // throws on in Migrate(). Pinning the column type would make Npgsql refuse the UTC
+                // CreatedOn values the audit writes, so keep EF 8's behaviour.
+                c.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
                 c.UseSnakeCaseNamingConvention();
                 c.UseNpgsql(Configuration.GetConnectionString(SurlDbContext.ConnectionString), b =>
                 {
@@ -79,6 +85,7 @@ namespace SW.Surl.Web
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapCqApi();
             });
         }
     }

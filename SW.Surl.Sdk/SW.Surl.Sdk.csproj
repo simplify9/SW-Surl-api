@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <PackageId>SimplyWorks.Surl.Sdk</PackageId>
     <Authors>SimplyWorks</Authors>
     <Product>SimplyWorks.Surl.Sdk</Product>
@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.3.0" />
-    <PackageReference Include="SimplyWorks.HttpExtensions" Version="8.0.0" />
+    <PackageReference Include="SimplyWorks.HttpExtensions" Version="8.1.1" />
   </ItemGroup>
 
 </Project>
